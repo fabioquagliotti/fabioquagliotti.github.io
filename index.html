@@ -456,6 +456,21 @@ table.def td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--ac
 /* --- v9 : pas de panneaux collants sur mobile --- */
 @media (max-width:900px){ .proj-grid aside{position:static} }
 @media (max-width:860px){ .evidence{position:static;scroll-margin-top:72px} }
+
+/* --- v10 : cellule animée --- */
+.eswfig{margin:4px 0 16px;border-radius:16px;overflow:hidden;background:#1A120D;box-shadow:0 26px 50px -32px rgba(40,18,6,.85), inset 0 0 0 1px rgba(255,230,205,.06)}
+.eswfig canvas{display:block;width:100%;height:380px}
+.eswctl{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:10px 16px 16px;background:linear-gradient(#111A1E,#0F1517)}
+.eswctl button{background:none;border:0;color:#EADCCB;font:600 12.5px/1.2 var(--body);cursor:pointer;padding:6px 0;opacity:.55;transition:opacity .2s}
+.eswctl button[aria-pressed="true"]{opacity:1}
+.eswctl button:hover{opacity:.9}
+.eswctl .trk{position:relative;padding-bottom:16px}
+.eswctl input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:4px;margin:8px 0 0;background:linear-gradient(90deg,rgba(241,222,198,.18),rgba(241,222,198,.85));cursor:pointer}
+.eswctl input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:#F6E7D3;border:0;box-shadow:0 0 0 5px rgba(246,231,211,.14),0 0 18px rgba(246,214,170,.7)}
+.eswctl input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#F6E7D3;border:0;box-shadow:0 0 0 5px rgba(246,231,211,.14),0 0 18px rgba(246,214,170,.7)}
+.eswctl input[type=range]:focus-visible{outline:2px solid #F6E7D3;outline-offset:6px}
+.eswctl .mid{position:absolute;left:50%;bottom:0;transform:translateX(-50%);font:500 11px/1 var(--body);color:#B9A08A;white-space:nowrap;letter-spacing:.02em}
+@media (max-width:420px){ .eswctl{gap:10px;padding:10px 12px 14px} .eswctl button{font-size:11.5px} }
 </style>
 </head>
 <body>
@@ -492,7 +507,14 @@ table.def td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--ac
       <aside class="esw" aria-labelledby="esw-t">
         <h2 id="esw-t">Le contexte de mon sujet</h2>
         <p class="sub">L'eau se décompose hors d'une fenêtre de potentiel. Un sel de lithium très concentré, l'électrolyte « water-in-salt », élargit cette fenêtre.</p>
-        <svg id="esw-svg" viewBox="0 0 360 320" role="img" aria-label="Comparaison sur une même échelle de potentiel : la fenêtre de stabilité de l'eau pure, 1,23 volt, et celle d'un électrolyte water-in-salt, de l'ordre de 3 volts."></svg>
+        <figure class="eswfig">
+          <canvas id="esw-cv" role="img" aria-label="Cellule animée sur une échelle de potentiel. En haut, l'oxydation de l'eau dégage de l'O₂ ; en bas, sa réduction dégage de l'H₂ ; au centre, la zone où l'électrolyte est stable. Avec un sel concentré, la fenêtre stable passe de 1,23 V pour l'eau pure à environ 3 V pour l'électrolyte water-in-salt."></canvas>
+          <div class="eswctl">
+            <button type="button" id="esw-bw" aria-pressed="false">Eau pure</button>
+            <div class="trk"><input type="range" id="esw-r" min="0" max="100" step="any" value="0" aria-label="Concentration en sel, de l'eau pure à l'électrolyte water-in-salt"><span class="mid" aria-hidden="true">sel concentré →</span></div>
+            <button type="button" id="esw-bs" aria-pressed="true">Water-in-salt</button>
+          </div>
+        </figure>
         <div class="eqs">
           <p><span class="eq-k"><i style="background:var(--oer)"></i>Oxydation · haut</span><span class="eq">4 OH⁻ → O₂ + 2 H₂O + 4 e⁻</span></p>
           <p><span class="eq-k"><i style="background:var(--her)"></i>Réduction · bas</span><span class="eq">2 H₂O + 2 e⁻ → H₂ + 2 OH⁻</span></p>
@@ -1052,62 +1074,200 @@ function route(){
 }
 window.addEventListener('hashchange',route);
 
-/* Widget fenêtre de stabilité : deux colonnes sur une même échelle (ordres de grandeur) */
+/* Widget fenêtre de stabilité : cellule animée (canvas), mêmes contenus que la version précédente */
 (function(){
-  const svg=$('#esw-svg'); if(!svg) return;
-  const VMAX=5.5, T=40, B=300, yv=v=>B-(B-T)*v/VMAX;
-  const WATER={her:2.63,oer:3.86,f:.12}, WISE={her:1.9,oer:4.9,f:.32};
-  const CA={x:78,w:92}, CB={x:236,w:92};
-  const D='font-family:var(--display);', S='font-family:var(--body);';
-  function grad(id,st){ const o=v=>Math.max(0,Math.min(1,(yv(v)-T)/(B-T)));
-    return `<linearGradient id="${id}" x1="0" y1="${T}" x2="0" y2="${B}" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="var(--oer)" stop-opacity=".78"/>
-      <stop offset="${o(st.oer+st.f)}" stop-color="var(--oer)" stop-opacity=".5"/>
-      <stop offset="${o(st.oer-st.f)}" stop-color="var(--oer)" stop-opacity="0"/>
-      <stop offset="${o(st.her+st.f)}" stop-color="var(--her)" stop-opacity="0"/>
-      <stop offset="${o(st.her-st.f)}" stop-color="var(--her)" stop-opacity=".5"/>
-      <stop offset="1" stop-color="var(--her)" stop-opacity=".78"/></linearGradient>`; }
-  function col(c,id,st,title,label,approx){
-    const mid=(yv(st.oer)+yv(st.her))/2;
-    let s=`<text x="${c.x+c.w/2}" y="${T-14}" text-anchor="middle" style="${S}font-size:12.5px;font-weight:600;fill:var(--ink)">${title}</text>`;
-    s+=`<rect x="${c.x}" y="${T}" width="${c.w}" height="${B-T}" rx="12" fill="var(--paper)"/>`;
-    s+=`<rect x="${c.x}" y="${T}" width="${c.w}" height="${B-T}" rx="12" fill="url(#${id})"/>`;
-    s+=`<rect x="${c.x+.5}" y="${T+.5}" width="${c.w-1}" height="${B-T-1}" rx="11.5" fill="none" stroke="var(--line)"/>`;
-    s+=`<text x="${c.x+c.w/2}" y="${T+24}" text-anchor="middle" style="${D}font-size:15px;font-weight:600;fill:#fff;opacity:.95">O₂</text>`;
-    s+=`<text x="${c.x+c.w/2}" y="${B-13}" text-anchor="middle" style="${D}font-size:15px;font-weight:600;fill:#fff;opacity:.95">H₂</text>`;
-    s+=`<text x="${c.x+c.w/2}" y="${mid+2}" text-anchor="middle" style="${D}font-size:${approx?21:19}px;font-style:italic;fill:var(--ink)">${label}</text>`;
-    s+=`<text x="${c.x+c.w/2}" y="${mid+18}" text-anchor="middle" style="${S}font-size:9.5px;letter-spacing:.12em;fill:var(--ok);font-weight:600">STABLE</text>`;
-    return s; }
-  function draw(b){
-    let s=`<defs>${grad('ga',WATER)}${grad('gb',b)}</defs>`;
-    for(let v=0;v<=5;v++){ s+=`<line x1="40" x2="${CB.x+CB.w+14}" y1="${yv(v)}" y2="${yv(v)}" stroke="var(--line)" stroke-width="1" stroke-dasharray="${v?'1 4':''}"/>`;
-      s+=`<text x="32" y="${yv(v)+4}" text-anchor="end" style="${S}font-size:11px;fill:var(--muted)">${v}</text>`; }
-    s+=`<text x="32" y="${T-14}" text-anchor="end" style="${S}font-size:10.5px;fill:var(--muted)">V</text>`;
-    s+=`<text x="10" y="${(T+B)/2}" text-anchor="middle" transform="rotate(-90 10 ${(T+B)/2})" style="${S}font-size:10px;fill:var(--muted);letter-spacing:.04em">potentiel vs Li⁺/Li</text>`;
-    // connecteurs d'élargissement
-    const x1=CA.x+CA.w+6, x2=CB.x-6;
-    s+=`<path d="M${x1} ${yv(WATER.oer)} C ${(x1+x2)/2} ${yv(WATER.oer)}, ${(x1+x2)/2} ${yv(b.oer)}, ${x2} ${yv(b.oer)}" fill="none" stroke="var(--oer)" stroke-width="1.4" stroke-dasharray="3 4" opacity=".8"/>`;
-    s+=`<path d="M${x1} ${yv(WATER.her)} C ${(x1+x2)/2} ${yv(WATER.her)}, ${(x1+x2)/2} ${yv(b.her)}, ${x2} ${yv(b.her)}" fill="none" stroke="var(--her)" stroke-width="1.4" stroke-dasharray="3 4" opacity=".8"/>`;
-    s+=`<path d="M${x2-6} ${yv(b.oer)-4} L${x2} ${yv(b.oer)} L${x2-6} ${yv(b.oer)+4}" fill="none" stroke="var(--oer)" stroke-width="1.4"/>`;
-    s+=`<path d="M${x2-6} ${yv(b.her)-4} L${x2} ${yv(b.her)} L${x2-6} ${yv(b.her)+4}" fill="none" stroke="var(--her)" stroke-width="1.4"/>`;
-    s+=`<text x="${(x1+x2)/2}" y="${(yv(b.oer)+yv(b.her))/2+4}" text-anchor="middle" style="${S}font-size:10px;fill:var(--muted)">sel</text>`;
-    s+=`<text x="${(x1+x2)/2}" y="${(yv(b.oer)+yv(b.her))/2+16}" text-anchor="middle" style="${S}font-size:10px;fill:var(--muted)">concentré</text>`;
-    s+=col(CA,'ga',WATER,'Eau pure','1,23 V',false);
-    s+=col(CB,'gb',b,'Water-in-salt','≈ 3 V',true);
-    svg.innerHTML=s; }
+  const cv=$('#esw-cv'); if(!cv) return;
+  const ctx=cv.getContext('2d');
+  const R=$('#esw-r'), bW=$('#esw-bw'), bS=$('#esw-bs');
   const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(reduce){ draw(WISE); return; }
-  draw(WISE);
-  // petite animation d'élargissement, depuis un état final déjà visible
-  setTimeout(()=>{ const t0=performance.now(), dur=1100;
-    const step=now=>{ const k=Math.min(1,(now-t0)/dur), e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
-      const m=(a,b)=>a+(b-a)*e;
-      draw({her:m(WATER.her,WISE.her),oer:m(WATER.oer,WISE.oer),f:m(WATER.f,WISE.f)}); if(k<1) requestAnimationFrame(step); };
-    requestAnimationFrame(step); }, 350);
-  svg.addEventListener('click',()=>{ const t0=performance.now(), dur=1100;
-    const step=now=>{ const k=Math.min(1,(now-t0)/dur), e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2, m=(a,b)=>a+(b-a)*e;
-      draw({her:m(WATER.her,WISE.her),oer:m(WATER.oer,WISE.oer),f:m(WATER.f,WISE.f)}); if(k<1) requestAnimationFrame(step); };
-    requestAnimationFrame(step); });
+  const S0={her:2.63,oer:3.86,f:.12}, S1={her:1.9,oer:4.9,f:.34};
+  const VMAX=5.5, TAU=Math.PI*2;
+  const lerp=(a,b,k)=>a+(b-a)*k, clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), rnd=(a,b)=>a+Math.random()*(b-a);
+  const ease=k=>k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+  const DISP='Fraunces, "Iowan Old Style", Georgia, serif', BODY='"Hanken Grotesk", system-ui, sans-serif';
+  let W=0,H=0,dpr=1,t=reduce?1:0,target=reduce?1:0,time=0,last=0,raf=0,running=false,started=false;
+  let accO=0,accH=0,inView=false,dragging=false,grain=null; const bubbles=[];
+
+  /* molécules de la zone stable : eau toujours présente, ions du sel selon la concentration */
+  const water=[...Array(16)].map(()=>({u:rnd(.04,.96),w:rnd(.08,.92),ph:rnd(0,TAU),sp:rnd(.25,.6),rot:rnd(0,TAU),rs:rnd(-.5,.5)}));
+  const li=[...Array(14)].map(()=>({u:rnd(.04,.96),w:rnd(.08,.92),ph:rnd(0,TAU),sp:rnd(.3,.7)}));
+  const an=[...Array(9)].map(()=>({u:rnd(.04,.96),w:rnd(.1,.9),ph:rnd(0,TAU),sp:rnd(.2,.45)}));
+
+  function makeGrain(){ const c=document.createElement('canvas'); c.width=c.height=120; const x=c.getContext('2d'); const d=x.createImageData(120,120);
+    for(let i=0;i<d.data.length;i+=4){ const v=Math.random()*255; d.data[i]=d.data[i+1]=d.data[i+2]=v; d.data[i+3]=22; } x.putImageData(d,0,0); grain=ctx.createPattern(c,'repeat'); }
+  function size(){
+    const w=cv.clientWidth||360; dpr=Math.min(2,window.devicePixelRatio||1);
+    W=w; H=Math.round(clamp(w*1.0,330,430));
+    cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); cv.style.height=H+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  const G=()=>({L:46,R:W-14,T:18,B:H-18});
+  const st=()=>{ const k=ease(clamp(t,0,1)); return {her:lerp(S0.her,S1.her,k),oer:lerp(S0.oer,S1.oer,k),f:lerp(S0.f,S1.f,k)}; };
+  const yv=(v,g)=>g.B-(g.B-g.T)*v/VMAX;
+
+  function spawn(dt){
+    const g=G(), s=st(), yO=yv(s.oer,g), yH=yv(s.her,g);
+    const hO=yO-g.T, hH=g.B-yH;
+    accO+=dt*Math.max(0,hO)/9; accH+=dt*Math.max(0,hH)/9;
+    while(accO>1 && bubbles.length<170){ accO--; bubbles.push({k:0,x:rnd(g.L+8,g.R-8),y:rnd(yO-hO*.35,yO+4),r:rnd(1.1,4.4),vy:rnd(14,36),ph:rnd(0,TAU)}); }
+    while(accH>1 && bubbles.length<170){ accH--; bubbles.push({k:1,x:rnd(g.L+8,g.R-8),y:rnd(g.B-hH*.35,g.B-2),r:rnd(1,3.6),vy:rnd(16,42),ph:rnd(0,TAU)}); }
+    accO=Math.min(accO,3); accH=Math.min(accH,3);
+  }
+  function update(dt){
+    time+=dt;
+    t+= (target-t)*Math.min(1,dt*2.4);
+    if(Math.abs(target-t)<.0005) t=target;
+    spawn(dt);
+    const g=G(), s=st(), yO=yv(s.oer,g), yH=yv(s.her,g), fp=(g.B-g.T)*s.f/VMAX;
+    for(let i=bubbles.length-1;i>=0;i--){
+      const b=bubbles[i]; b.y-=b.vy*dt; b.x+=Math.sin(time*1.6+b.ph)*.18;
+      if(b.k===0){ b.a=clamp((b.y-g.T)/18,0,1)*clamp((yO+fp*.6-b.y)/(fp+8),0,1); if(b.y<g.T-6) bubbles.splice(i,1); }
+      else { b.a=clamp((b.y-(yH-fp*.4))/(fp+12),0,1)*clamp((g.B-b.y)/10,0,1); if(b.y<yH-fp) bubbles.splice(i,1); }
+    }
+  }
+
+  function draw(){
+    const g=G(), s=st(), yO=yv(s.oer,g), yH=yv(s.her,g), fp=(g.B-g.T)*s.f/VMAX, pw=g.R-g.L;
+    ctx.clearRect(0,0,W,H);
+    // fond de la cellule
+    let gr=ctx.createLinearGradient(0,0,0,H);
+    gr.addColorStop(0,'#2A1710'); gr.addColorStop(.5,'#1A120D'); gr.addColorStop(1,'#111A1E');
+    ctx.fillStyle=gr; ctx.fillRect(0,0,W,H);
+
+    ctx.save(); ctx.beginPath(); ctx.roundRect(g.L,g.T,pw,g.B-g.T,12); ctx.clip();
+    // zone d'oxydation (haut)
+    const topEnd=Math.min(g.B,yO+fp);
+    gr=ctx.createLinearGradient(0,g.T,0,topEnd);
+    gr.addColorStop(0,'rgba(222,118,70,.70)');
+    gr.addColorStop(clamp((yO-fp-g.T)/(topEnd-g.T),0,1),'rgba(222,118,70,.32)');
+    gr.addColorStop(1,'rgba(222,118,70,0)');
+    ctx.fillStyle=gr; ctx.fillRect(g.L,g.T,pw,topEnd-g.T);
+    // zone de réduction (bas)
+    const botStart=Math.max(g.T,yH-fp);
+    gr=ctx.createLinearGradient(0,botStart,0,g.B);
+    gr.addColorStop(0,'rgba(110,158,180,0)');
+    gr.addColorStop(clamp((2*fp)/(g.B-botStart),0,1),'rgba(110,158,180,.32)');
+    gr.addColorStop(1,'rgba(110,158,180,.70)');
+    ctx.fillStyle=gr; ctx.fillRect(g.L,botStart,pw,g.B-botStart);
+    // halo de la zone stable
+    const s0=yO-fp*.2, s1=yH+fp*.2;
+    gr=ctx.createLinearGradient(0,s0,0,s1);
+    gr.addColorStop(0,'rgba(248,232,208,0)'); gr.addColorStop(.2,'rgba(248,232,208,.13)');
+    gr.addColorStop(.5,'rgba(248,232,208,.20)'); gr.addColorStop(.8,'rgba(248,232,208,.13)'); gr.addColorStop(1,'rgba(248,232,208,0)');
+    ctx.fillStyle=gr; ctx.fillRect(g.L,s0,pw,s1-s0);
+    // lueur centrale
+    { const mcx=(g.L+g.R)/2, mcy=(yO+yH)/2, rr=Math.max(60,(yH-yO)*.75);
+      ctx.save(); ctx.translate(mcx,mcy); ctx.scale(1.7,1);
+      const bl=ctx.createRadialGradient(0,0,0,0,0,rr); bl.addColorStop(0,'rgba(255,226,186,.20)'); bl.addColorStop(1,'rgba(255,226,186,0)');
+      ctx.fillStyle=bl; ctx.beginPath(); ctx.arc(0,0,rr,0,TAU); ctx.fill(); ctx.restore(); }
+
+    // grille de potentiel
+    ctx.lineWidth=1;
+    for(let v=1;v<=5;v++){ const y=Math.round(yv(v,g))+.5; ctx.strokeStyle='rgba(255,236,214,.07)'; ctx.beginPath(); ctx.moveTo(g.L,y); ctx.lineTo(g.R,y); ctx.stroke(); }
+
+    // molécules dans la zone stable
+    const cx=(g.L+g.R)/2, cy=(yO+yH)/2, pad=10;
+    const band0=yO+pad, band1=yH-pad;
+    const fadeEdge=y=>clamp((y-yO)/(fp+6),0,1)*clamp((yH-y)/(fp+6),0,1);
+    const fadeCenter=(x,y)=>clamp((Math.hypot((x-cx)/1.6,y-cy)-34)/30,0,1);
+    const k=ease(clamp(t,0,1));
+    water.forEach(m=>{
+      const x=g.L+14+m.u*(pw-28)+Math.sin(time*m.sp+m.ph)*5, y=lerp(band0,band1,m.w)+Math.cos(time*m.sp*.8+m.ph)*4;
+      const a=.62*fadeEdge(y)*fadeCenter(x,y); if(a<.02) return;
+      const ang=m.rot+time*m.rs*.4;
+      for(const d of [-0.91,0.91]){ ctx.beginPath(); ctx.arc(x+Math.cos(ang+d)*4.4,y+Math.sin(ang+d)*4.4,1.7,0,TAU); ctx.fillStyle=`rgba(255,250,244,${a*.85})`; ctx.fill(); }
+      ctx.beginPath(); ctx.arc(x,y,3.1,0,TAU); ctx.fillStyle=`rgba(232,128,92,${a})`; ctx.fill();
+    });
+    an.forEach((m,i)=>{
+      const vis=clamp(k*an.length-i,0,1); if(vis<=0) return;
+      const x=g.L+14+m.u*(pw-28)+Math.sin(time*m.sp+m.ph)*6, y=lerp(band0,band1,m.w)+Math.cos(time*m.sp+m.ph)*5;
+      const a=vis*fadeEdge(y)*fadeCenter(x,y); if(a<.02) return;
+      const rg=ctx.createRadialGradient(x,y,0,x,y,7); rg.addColorStop(0,`rgba(214,190,160,${.42*a})`); rg.addColorStop(1,'rgba(214,190,160,0)');
+      ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(x,y,7,0,TAU); ctx.fill();
+      ctx.strokeStyle=`rgba(232,212,186,${.45*a})`; ctx.lineWidth=.8; ctx.beginPath(); ctx.arc(x,y,4.6,0,TAU); ctx.stroke();
+    });
+    li.forEach((m,i)=>{
+      const vis=clamp(k*li.length-i,0,1); if(vis<=0) return;
+      const x=g.L+14+m.u*(pw-28)+Math.sin(time*m.sp+m.ph)*4, y=lerp(band0,band1,m.w)+Math.cos(time*m.sp*1.1+m.ph)*4;
+      const a=vis*fadeEdge(y)*fadeCenter(x,y); if(a<.02) return;
+      const rg=ctx.createRadialGradient(x,y,0,x,y,6); rg.addColorStop(0,`rgba(250,206,120,${.95*a})`); rg.addColorStop(.35,`rgba(240,186,96,${.55*a})`); rg.addColorStop(1,'rgba(240,186,96,0)');
+      ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(x,y,6,0,TAU); ctx.fill();
+    });
+
+    // bulles de gaz
+    bubbles.forEach(b=>{
+      const a=b.a||0; if(a<.02) return;
+      const c=b.k===0?'246,160,118':'170,206,222';
+      ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,TAU);
+      ctx.fillStyle=`rgba(${c},${.12*a})`; ctx.fill();
+      ctx.lineWidth=1; ctx.strokeStyle=`rgba(${c},${.8*a})`; ctx.stroke();
+      ctx.beginPath(); ctx.arc(b.x-b.r*.35,b.y-b.r*.38,Math.max(.5,b.r*.28),0,TAU); ctx.fillStyle=`rgba(255,255,255,${.75*a})`; ctx.fill();
+    });
+
+    // étiquettes des zones
+    ctx.font=`600 16px ${DISP}`; ctx.textAlign='right'; ctx.textBaseline='alphabetic';
+    ctx.fillStyle='rgba(255,244,234,.94)'; ctx.fillText('O₂',g.R-12,g.T+24);
+    ctx.fillText('H₂',g.R-12,g.B-12);
+    if(grain){ ctx.fillStyle=grain; ctx.globalCompositeOperation='overlay'; ctx.fillRect(g.L,g.T,pw,g.B-g.T); ctx.globalCompositeOperation='source-over'; }
+    ctx.restore();
+
+    // contour de la cellule
+    ctx.strokeStyle='rgba(255,236,214,.10)'; ctx.lineWidth=1; ctx.beginPath(); ctx.roundRect(g.L+.5,g.T+.5,pw-1,g.B-g.T-1,12); ctx.stroke();
+
+    // valeur de la fenêtre
+    const aW=clamp(1-(k-.3)/.4,0,1), aS=1-aW;
+    ctx.textAlign='center';
+    ctx.font=`italic 500 ${W<340?28:32}px ${DISP}`;
+    ctx.shadowColor='rgba(255,220,180,.35)'; ctx.shadowBlur=18;
+    if(aW>.01){ ctx.fillStyle=`rgba(250,238,222,${aW})`; ctx.fillText('1,23 V',cx,cy+7-(1-aW)*6); }
+    if(aS>.01){ ctx.fillStyle=`rgba(250,238,222,${aS})`; ctx.fillText('≈ 3 V',cx,cy+7+(1-aS)*6); }
+    ctx.shadowBlur=0;
+    ctx.font=`600 10px ${BODY}`; ctx.fillStyle='rgba(178,204,148,.95)';
+    ctx.fillText('S T A B L E',cx,cy+25);
+
+    // axe des potentiels
+    ctx.font=`500 10.5px ${BODY}`; ctx.textAlign='right'; ctx.fillStyle='rgba(232,214,194,.62)';
+    for(let v=0;v<=5;v++) ctx.fillText(String(v),g.L-10,yv(v,g)+3.5);
+    ctx.fillText('V',g.L-10,g.T+8);
+    ctx.save(); ctx.translate(14,(g.T+g.B)/2); ctx.rotate(-Math.PI/2); ctx.textAlign='center';
+    ctx.font=`500 10px ${BODY}`; ctx.fillStyle='rgba(232,214,194,.5)'; ctx.fillText('potentiel vs Li⁺/Li',0,0); ctx.restore();
+  }
+
+  function frame(now){
+    const dt=Math.min(.05,last?(now-last)/1000:0); last=now;
+    update(dt); draw();
+    if(!dragging) R.value=(t*100).toFixed(1);
+    syncCtl();
+    if(running) raf=requestAnimationFrame(frame);
+  }
+  function start(){ if(running||reduce) return; running=true; last=0; raf=requestAnimationFrame(frame); }
+  function stop(){ running=false; cancelAnimationFrame(raf); }
+  function syncCtl(){
+    bW.setAttribute('aria-pressed', target<.5); bS.setAttribute('aria-pressed', target>=.5);
+  }
+  function setTarget(v){ target=clamp(v,0,1); R.value=Math.round(target*100); if(reduce){ t=target; draw(); syncCtl(); } }
+
+  R.addEventListener('pointerdown',()=>dragging=true); window.addEventListener('pointerup',()=>dragging=false);
+  R.addEventListener('input',()=>{ target=R.value/100; if(reduce){ t=target; draw(); } syncCtl(); });
+  bW.addEventListener('click',()=>setTarget(0));
+  bS.addEventListener('click',()=>setTarget(1));
+
+  makeGrain(); size();
+  // amorce : quelques secondes de bulles déjà présentes
+  for(let i=0;i<120;i++) update(1/30);
+  R.value=Math.round(target*100);
+  draw(); syncCtl();
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(draw);
+
+  new ResizeObserver(()=>{ size(); draw(); }).observe(cv);
+  if(!reduce){
+    new IntersectionObserver(es=>es.forEach(e=>{
+      inView=e.isIntersecting;
+      if(inView){ start(); if(!started){ started=true; setTimeout(()=>setTarget(1),500); } }
+      else stop();
+    }),{threshold:.15}).observe(cv);
+    document.addEventListener('visibilitychange',()=>{ if(document.hidden) stop(); else if(inView) start(); });
+  }
 })();
 
 /* Contact */
