@@ -452,6 +452,10 @@ table.def td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--ac
 .esw .note{margin-top:12px}
 .recent{align-self:flex-start;margin-top:12px;font-family:var(--mono);font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:4px 9px;border-radius:999px;background:var(--accent);color:var(--surface)}
 .card:has(.recent){border-color:var(--accent);box-shadow:0 10px 30px -22px rgba(90,50,20,.5)}
+
+/* --- v9 : pas de panneaux collants sur mobile --- */
+@media (max-width:900px){ .proj-grid aside{position:static} }
+@media (max-width:860px){ .evidence{position:static;scroll-margin-top:72px} }
 </style>
 </head>
 <body>
@@ -876,7 +880,7 @@ document.querySelectorAll('#domtabs .chip').forEach(b=>b.addEventListener('click
   document.querySelectorAll('.sgroup').forEach(g=>g.hidden = selDom!=='all' && g.dataset.g!==selDom);
   const first = SKILLS.findIndex(s=>selDom==='all'||s.d===selDom); showSkill(first);
 }));
-document.querySelectorAll('.skill').forEach(b=>b.addEventListener('click',()=>showSkill(+b.dataset.s)));
+document.querySelectorAll('.skill').forEach(b=>b.addEventListener('click',()=>{ showSkill(+b.dataset.s); if(matchMedia('(max-width:860px)').matches) $('#evidence').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'}); }));
 function showSkill(i){
   selSkill=i;
   document.querySelectorAll('.skill').forEach(x=>x.setAttribute('aria-pressed', +x.dataset.s===i));
